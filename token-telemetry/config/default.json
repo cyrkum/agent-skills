@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "runtime_dir": "~/.agents/data/token-telemetry",
+  "telemetry_file": "telemetry.jsonl",
+  "baselines_file": "baselines.jsonl",
+  "ollama_url": "http://127.0.0.1:11434",
+  "retention_days": null
+}
