@@ -1,0 +1,11 @@
+# macOS metadata
+.DS_Store
+
+# Local skill installation and preference state
+/.skill-lock.json
+
+# Python generated files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
