@@ -17,4 +17,10 @@ python3 "$skill_dir/scripts/telemetry.py" finalize --task-id TASK --status passe
 python3 "$skill_dir/scripts/report.py" --task-id TASK
 ```
 
-Remote usage is optional. Unavailable measurements remain `null`; no KPI is fabricated. For instruction-based integration, follow [integrations/AGENTS.template.md](integrations/AGENTS.template.md).
+For Ollama visible thinking-token counts, add `--count-reasoning`. Capture
+Copilot SDK `assistant.usage` events or record other measured usage with
+`telemetry.py record`; see [usage](docs/USAGE.md). Reports calculate missing totals or components when the
+other two counts are known and show the available measurements. Truly
+unavailable measurements remain `null`/`N/A`; zeros are reported only when
+measured or calculated. No KPI is fabricated. For instruction-based integration,
+follow [integrations/AGENTS.template.md](integrations/AGENTS.template.md).

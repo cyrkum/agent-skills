@@ -3,6 +3,7 @@
 `scripts/ollama_adapter.py` calls the official loopback-only `/api/generate` or `/api/chat` endpoint with `stream=false` or streaming enabled. Ollama responses can provide:
 
 - `prompt_eval_count`
+- `prompt_eval_cached_count` (when provided)
 - `eval_count`
 - `prompt_eval_duration`
 - `eval_duration`
@@ -11,3 +12,4 @@
 - model identifier
 
 Durations from Ollama are nanoseconds. `total_tokens` is `prompt_eval_count + eval_count`. Prompt and output content are not persisted.
+For optional visible thinking-token counting from logprobs, see [usage](../docs/USAGE.md#ollama-reasoning-and-cached-tokens).

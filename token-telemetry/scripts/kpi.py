@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from telemetry import baselines_file, read_jsonl, telemetry_file
+from telemetry import baselines_file, read_jsonl, telemetry_file, token_value
 
 
 def unavailable(reason):
@@ -19,7 +19,7 @@ def pct(numerator, denominator):
 
 
 def sum_tokens(records, location, field):
-    values = [r.get(field) for r in records if r.get("execution_location") == location
+    values = [token_value(r, field) for r in records if r.get("execution_location") == location
               and r.get("record_type") == "invocation"]
     measured = [v for v in values if v is not None]
     return sum(measured) if measured else None
@@ -42,6 +42,8 @@ def calculate(records, baselines=None, task_id=None, task_statuses=None):
         rtr = unavailable("remote token measurement unavailable")
     elif baseline is None:
         rtr = unavailable("comparable measured baseline unavailable")
+    elif baseline == 0:
+        rtr = unavailable("division by zero")
     else:
         rtr = pct(1 - remote / baseline, 1)
 
@@ -79,19 +81,29 @@ def calculate(records, baselines=None, task_id=None, task_statuses=None):
                "status": "available", "reason": None}
 
     observed = len(invocations)
-    measured = sum(r.get("total_tokens") is not None for r in invocations)
+    measured = sum(token_value(r, "total_tokens") is not None for r in invocations)
     tcr = unavailable("no observed invocations") if observed == 0 else {
         "value": measured / observed * 100, "status": "available", "reason": None
     }
 
     breakdown = {}
-    for field in ("input_tokens", "processing_tokens", "output_tokens"):
+    for field in ("input_tokens", "cached_input_tokens", "cache_write_tokens",
+                  "processing_tokens", "output_tokens"):
         local_field = sum_tokens(records, "local", field)
         remote_field = sum_tokens(records, "remote", field)
+        measured_field = sum(
+            r.get("execution_location") in ("local", "remote") and token_value(r, field) is not None
+            for r in invocations
+        )
         breakdown[field] = {
             "local": local_field,
             "remote": remote_field,
-            "status": "available" if local_field is not None or remote_field is not None else "partial",
+            "total": sum(v for v in (local_field, remote_field) if v is not None)
+            if local_field is not None or remote_field is not None else None,
+            "status": "available" if invocations and measured_field == observed else "partial",
+            "measured_invocations": measured_field,
+            "observed_invocations": observed,
+            "derived_invocations": sum(field in r.get("derived_fields", []) for r in invocations),
         }
 
     return {

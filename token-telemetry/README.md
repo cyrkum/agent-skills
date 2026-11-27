@@ -13,11 +13,14 @@ python3 scripts/report.py --task-id demo
 ```
 
 No baseline or remote telemetry is required. Reports identify unavailable KPIs explicitly.
+Measured usage from other providers can be recorded with `telemetry.py record`;
+see [usage](docs/USAGE.md).
 
 ## Components
 
 - `scripts/telemetry.py`: task lifecycle, persistence, and baselines
 - `scripts/ollama_adapter.py`: native Ollama `/api/generate` telemetry
+- `scripts/copilot_adapter.py`: Copilot SDK `assistant.usage` event collection
 - `scripts/kpi.py`: RTR, TDR, TAF, RTS, TSR, and TCR
 - `scripts/report.py`: compact human-readable report
 - `schemas/telemetry.schema.json`: versioned normalized record
