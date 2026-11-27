@@ -121,6 +121,82 @@ class InstallSkillsTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertEqual(destination.resolve(), other_target.resolve())
 
+    def test_all_skills_continues_after_conflicting_destinations(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            repository = Path(temporary) / "repository"
+            repository.mkdir()
+            installer = repository / "install-skills.sh"
+            shutil.copy2(INSTALLER, installer)
+            for name in ("first", "second", "third"):
+                skill = repository / name
+                skill.mkdir()
+                (skill / "SKILL.md").write_text(f"name: {name}\n")
+
+            agents_home = Path(temporary) / "agents"
+            skills_home = agents_home / "skills"
+            skills_home.mkdir(parents=True)
+            (skills_home / "first").write_text("preserve")
+            (skills_home / "second").symlink_to("elsewhere")
+
+            result = subprocess.run(
+                [str(installer), "--agents-home", str(agents_home)],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("first", result.stderr)
+            self.assertIn("second", result.stderr)
+            self.assertEqual((skills_home / "first").read_text(), "preserve")
+            self.assertEqual(os.readlink(skills_home / "second"), "elsewhere")
+            self.assertTrue((skills_home / "third").is_symlink())
+            self.assertEqual(
+                (skills_home / "third").resolve(), (repository / "third").resolve()
+            )
+
+    def test_all_skills_continues_after_symlink_creation_failure(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            repository = Path(temporary) / "repository"
+            repository.mkdir()
+            installer = repository / "install-skills.sh"
+            shutil.copy2(INSTALLER, installer)
+            for name in ("first", "second"):
+                skill = repository / name
+                skill.mkdir()
+                (skill / "SKILL.md").write_text(f"name: {name}\n")
+            bin_dir = Path(temporary) / "bin"
+            bin_dir.mkdir()
+            ln = bin_dir / "ln"
+            ln.write_text(
+                '#!/bin/sh\ncase "$3" in */first) exit 1;; esac\n'
+                'exec /bin/ln "$@"\n'
+            )
+            ln.chmod(0o755)
+            agents_home = Path(temporary) / "agents"
+            result = subprocess.run(
+                [str(installer), "--agents-home", str(agents_home)],
+                env={**os.environ, "PATH": f"{bin_dir}:{os.environ['PATH']}"},
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Cannot install skill 'first'", result.stderr)
+            self.assertNotIn("Installed skill 'first'", result.stdout)
+            self.assertTrue((agents_home / "skills" / "second").is_symlink())
+
+    def test_unavailable_skills_home_is_reported_for_each_skill(self):
+        self.assertGreaterEqual(len(SKILLS), 2)
+        with tempfile.TemporaryDirectory() as temporary:
+            agents_home = Path(temporary) / "agents"
+            agents_home.write_text("not a directory")
+            result = self.run_installer("--agents-home", agents_home)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertEqual(
+                result.stderr.count("Cannot create skills directory"), len(SKILLS)
+            )
+            self.assertNotIn("Installed skill", result.stdout)
+
     def test_rejects_skill_path_traversal(self):
         with tempfile.TemporaryDirectory() as temporary:
             result = self.run_installer(

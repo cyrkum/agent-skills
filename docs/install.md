@@ -29,10 +29,12 @@ another working directory:
 ./install-skills.sh --agents-home "$HOME/.agents-work" delegate-local-tasks
 ```
 
-The script is safe to run again: an existing link to the same skill is left in
-place. If the destination already contains a different link, file, or
-directory, installation stops rather than replacing it. Resolve that
-destination conflict before retrying.
+The script automatically discovers all top-level skill directories, including
+`token-telemetry`. It is safe to run again: an existing link to the same skill
+is left in place. If a destination contains a different link, file, or
+directory, the script leaves it untouched and reports an error. When installing
+all skills, it continues with the remaining skills and exits nonzero if any
+installation failed. Resolve conflicts or other errors before retrying.
 
 ## For agents
 
