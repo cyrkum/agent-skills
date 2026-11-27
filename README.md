@@ -5,6 +5,7 @@ This repository contains reusable skills for AI agents. Skills are intended to b
 ## Skills
 
 - **delegate-local-tasks** — Guides agents in delegating bounded evidence and implementation tasks to local Ollama models, then verifying the evidence and proposals and running acceptance checks. See [the skill documentation](./delegate-local-tasks/SKILL.md).
+- **token-telemetry** — Collects normalized local Ollama telemetry, persists task records, calculates delegation KPIs, and generates end-of-task reports. See [the skill documentation](./token-telemetry/SKILL.md).
 
 ## Installation
 
