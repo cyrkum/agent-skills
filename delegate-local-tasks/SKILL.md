@@ -6,18 +6,22 @@ description: Delegate bounded evidence and implementation tasks to local Ollama 
 # Delegate local tasks
 
 Own the goal, plan, integration, verification, and final answer. Delegate
-suitable evidence and implementation jobs to local models. Use Python 3.9+ and
-the scripts beside this file. Set `skill_dir` to the directory where you
-downloaded or installed this skill:
+suitable evidence and implementation jobs to local models. Before any other
+skill operation, set `skill_dir` to the directory where this skill is installed
+and run the bootstrap; stop on failure. On first use per user and host it
+installs missing dependencies and the small model, and qualifies that model.
+It can download software and requires network access and administrator approval;
+see [installation details](references/installation.md) before running it.
 
 ```sh
 skill_dir="/path/to/delegate-local-tasks"
 worker="$skill_dir/scripts/worker.py"
-python3 "$worker" doctor
+PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"; export PATH
+sh "$skill_dir/scripts/bootstrap.sh"
 ```
 
 1. Define acceptance checks first. Split work into independent, bounded jobs: identify one source file or inclusive line range, a concrete question or change, required output, edge cases, and who verifies and integrates it. Use deterministic tools for exact counts, parsing, and tests. Do not delegate a job that costs more to specify and verify than to do directly.
-2. Qualify the local worker for the kind of work. Run `setup --profile small` on first use with permission to download weights; it downloads only a missing profile and runs evidence checks. Use `eval --profile small` to check installed weights without downloading. Recheck after changing model, Ollama version, or worker prompt; retain the result for this mission. If it fails, qualify another profile. The eight evidence checks are not a coding qualification: for code, also run the [coding exercise](references/coding-exercise.md) and representative checks for the task. Continue with a suitable passing profile or do the work yourself, unless local delegation is required, in which case report the blocker.
+2. Qualify the local worker for the kind of work. First-use bootstrap qualifies the small profile; use `eval --profile small` to recheck after changing the model, Ollama version, or worker prompt. If it fails, qualify another profile with `setup --profile standard`. The eight evidence checks are not a coding qualification: for code, also run the [coding exercise](references/coding-exercise.md) and representative checks for the task. Continue with a suitable passing profile or do the work yourself, unless local delegation is required, in which case report the blocker.
 3. Pass a path directly to the script. Select ranges using local filenames, headings, or a local search redirected to a file. Keep bulk source text, intermediate reasoning, and full logs outside the parent conversation. For a familiar deterministic lookup, perform it directly.
 4. Run one bounded job. Supply the qualified profile on each invocation. Use repeated calls for independent records. Limit each mission to ranges that can materially affect the deliverable.
 

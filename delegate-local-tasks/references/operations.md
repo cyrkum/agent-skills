@@ -47,16 +47,22 @@ can explicitly read the downloaded `SKILL.md`. Set `skill_dir` to the directory
 where you downloaded or installed this skill before running its commands, so
 they work regardless of its location. [Codex skill locations](https://developers.openai.com/codex/skills/)
 
-Open the Ollama application, or start `ollama serve` in a terminal if a service is needed. Run:
+Run the first-use bootstrap described in [installation](installation.md).
+For manual diagnostics or qualification, run:
 
 ```sh
 skill_dir="/path/to/delegate-local-tasks"
 python3 -B -m unittest discover -s "$skill_dir/tests" -v
 python3 "$skill_dir/scripts/worker.py" doctor
-python3 "$skill_dir/scripts/worker.py" setup --profile small
+python3 "$skill_dir/scripts/worker.py" eval --profile small
 ```
 
-Only `setup` may download a model. `eval` measures an already installed model. A passing evaluation prints `"passed":true` with each case and wall time. Exit status 0 indicates success, 1 indicates a semantic evaluation failure, and 2 indicates a request, input, or service problem. For recurring semantic failures, select another candidate and repeat qualification:
+Bootstrap invokes `setup`, which may download the small model on first use.
+Manual `setup` may download the selected model; `eval` measures an already
+installed model. A passing evaluation prints `"passed":true` with each case
+and wall time. Exit status 0 indicates success, 1 indicates a semantic evaluation
+failure, and 2 indicates a request, input, or service problem. For recurring
+semantic failures, select another candidate and repeat qualification:
 
 ```sh
 python3 "$skill_dir/scripts/worker.py" setup --profile standard
