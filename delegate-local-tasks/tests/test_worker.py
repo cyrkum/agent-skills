@@ -1,10 +1,12 @@
 import contextlib
 import io
 import json
-from pathlib import Path
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
@@ -41,6 +43,40 @@ class SourceTests(unittest.TestCase):
             self.path.write_bytes(blob)
             with self.subTest(blob=blob), self.assertRaises(w.JobError):
                 w.read_source(self.path)
+
+
+class PortabilityTests(unittest.TestCase):
+    def test_worker_from_downloaded_path_and_unrelated_working_directory(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            scripts = root / "Downloaded skill café" / "scripts"
+            scripts.mkdir(parents=True)
+            downloaded_worker = scripts / "worker.py"
+            shutil.copy2(Path(w.__file__).resolve(), downloaded_worker)
+
+            source_dir = root / "source files"
+            source_dir.mkdir()
+            source = source_dir / "record.txt"
+            source.write_bytes(b"first line\nportable line\n")
+
+            unrelated_cwd = root / "unrelated working directory"
+            unrelated_cwd.mkdir()
+            code = (
+                "import importlib.util, json, pathlib, sys\n"
+                "spec = importlib.util.spec_from_file_location('downloaded_worker', sys.argv[1])\n"
+                "module = importlib.util.module_from_spec(spec)\n"
+                "spec.loader.exec_module(module)\n"
+                "print(json.dumps(module.read_source(pathlib.Path(sys.argv[2]), '2:2')))\n"
+            )
+            result = subprocess.run(
+                [sys.executable, "-c", code, str(downloaded_worker), str(source)],
+                cwd=unrelated_cwd,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+
+            self.assertEqual(result.stdout, '["portable line\\n", 2]\n')
 
 
 class ContractTests(unittest.TestCase):

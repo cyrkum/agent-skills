@@ -5,10 +5,14 @@ description: Delegate bounded evidence and implementation tasks to local Ollama 
 
 # Delegate local tasks
 
-Own the goal, plan, integration, verification, and final answer. Delegate suitable evidence and implementation jobs to local models. Use Python 3.9+ and the scripts beside this file. For a standard user install:
+Own the goal, plan, integration, verification, and final answer. Delegate
+suitable evidence and implementation jobs to local models. Use Python 3.9+ and
+the scripts beside this file. Set `skill_dir` to the directory where you
+downloaded or installed this skill:
 
 ```sh
-worker="$HOME/.agents/skills/delegate-local-tasks/scripts/worker.py"
+skill_dir="/path/to/delegate-local-tasks"
+worker="$skill_dir/scripts/worker.py"
 python3 "$worker" doctor
 ```
 

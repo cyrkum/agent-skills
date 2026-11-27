@@ -28,10 +28,11 @@ python3 -m json.tool proposal.json
 Inspect the entire proposal for unsafe behavior, unexpected imports, and changes
 outside scope. In a scratch directory, manually save the reviewed Python code
 as `candidate.py` (remove Markdown fences if present). Never execute unreviewed
-model output. Then run:
+model output. With `skill_dir` set to the downloaded skill directory as in
+`SKILL.md`, run:
 
 ```sh
-python3 "$HOME/.agents/skills/delegate-local-tasks/tests/check_coding_exercise.py" candidate.py
+python3 "$skill_dir/tests/check_coding_exercise.py" candidate.py
 ```
 
 The check executes the candidate and exercises absent, malformed, Unicode,

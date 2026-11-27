@@ -42,14 +42,15 @@ load and cache state differed, so these are not controlled speed comparisons.
 
 ## Installation and qualification
 
-Use Python 3.9 or later. Codex discovers user skills at
-`~/.agents/skills/`; other agents can explicitly read the installed
-`SKILL.md`. [Codex skill locations](https://developers.openai.com/codex/skills/)
+Use Python 3.9 or later. Skill discovery locations vary by agent; other agents
+can explicitly read the downloaded `SKILL.md`. Set `skill_dir` to the directory
+where you downloaded or installed this skill before running its commands, so
+they work regardless of its location. [Codex skill locations](https://developers.openai.com/codex/skills/)
 
 Open the Ollama application, or start `ollama serve` in a terminal if a service is needed. Run:
 
 ```sh
-skill_dir="$HOME/.agents/skills/delegate-local-tasks"
+skill_dir="/path/to/delegate-local-tasks"
 python3 -B -m unittest discover -s "$skill_dir/tests" -v
 python3 "$skill_dir/scripts/worker.py" doctor
 python3 "$skill_dir/scripts/worker.py" setup --profile small
