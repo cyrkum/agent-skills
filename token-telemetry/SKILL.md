@@ -17,6 +17,12 @@ python3 "$skill_dir/scripts/telemetry.py" finalize --task-id TASK --status passe
 python3 "$skill_dir/scripts/report.py" --task-id TASK
 ```
 
+Before the final response, finalize the task with its actual status and run the
+report. Include the report's text in the final response itself, after the task
+result; tool output alone may not be visible in chat (including VS Code).
+If finalization or report generation fails, report the error instead of
+claiming telemetry was shown.
+
 For Ollama visible thinking-token counts, add `--count-reasoning`. Capture
 Copilot SDK `assistant.usage` events or record other measured usage with
 `telemetry.py record`; see [usage](docs/USAGE.md). Reports calculate missing totals or components when the

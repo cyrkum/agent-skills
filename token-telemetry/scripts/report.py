@@ -57,8 +57,9 @@ def main():
         print(json.dumps(result, sort_keys=True))
         return
 
-    print("\n**Task Telemetry**")
+    print("\n**Task Telemetry**\n")
     print("Tokens | Local | Remote | Total")
+    print("--- | --- | --- | ---")
     for label, field in (("Input", "input_tokens"), ("Cached input", "cached_input_tokens"),
                          ("Cache writes", "cache_write_tokens"),
                          ("Processing", "processing_tokens"), ("Output", "output_tokens")):
@@ -67,15 +68,17 @@ def main():
               f"{fmt(counts['total'], digits=0)}")
     print(f"Total | {fmt(local, digits=0)} | {fmt(remote, digits=0)} | "
           f"{fmt(result['tokens']['total'], digits=0)}")
-    print("Totals include available measurements only; N/A means not measured.")
+    print("\nTotals include available measurements only; N/A means not measured.")
     if any("processing_tokens" in r.get("derived_fields", []) for r in invocations):
         print("Processing includes derived visible-thinking tokens; hidden or control tokens may be excluded.")
     if any(value is not None for value in durations.values()):
         print("\nDuration (ns) | Observed total")
+        print("--- | ---")
         for label, field in (("Invocation", "duration_ns"), ("Prompt evaluation", "prompt_eval_duration"),
                              ("Output evaluation", "eval_duration"), ("Model load", "load_duration")):
             print(f"{label} | {fmt(durations[field], digits=0)}")
     print("\nKPI | Value")
+    print("--- | ---")
     for name in ("RTR", "TDR", "TAF", "RTS", "TSR", "TCR"):
         item = kpis[name]
         value = item["value"]
@@ -88,7 +91,7 @@ def main():
         else:
             text = str(value)
         print(f"{name} | {text}")
-    print(f"- Observed local invocations: {sum(r.get('execution_location') == 'local' for r in invocations)}")
+    print(f"\n- Observed local invocations: {sum(r.get('execution_location') == 'local' for r in invocations)}")
     print(f"- Task status: {status}.")
     print(f"- Telemetry status: {telemetry_status}.")
     print("- Final response usage: Not included.")

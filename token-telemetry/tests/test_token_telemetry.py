@@ -368,6 +368,42 @@ class ScriptTests(unittest.TestCase):
             self.assertEqual(report["telemetry_status"], "Missing")
             self.assertEqual(report["kpis"]["RTR"]["status"], "unavailable")
 
+    def test_vscode_chat_report_markdown_for_task_lifecycle(self):
+        with tempfile.TemporaryDirectory() as temp:
+            env = {**os.environ, "TOKEN_TELEMETRY_DIR": temp}
+            telemetry_cli = [sys.executable, str(SCRIPTS / "telemetry.py")]
+            for args in (
+                ["init", "--task-id", "demo"],
+                ["record", "--task-id", "demo", "--provider", "example", "--model", "m",
+                 "--location", "remote", "--input-tokens", "40", "--output-tokens", "15",
+                 "--duration-ns", "100"],
+                ["finalize", "--task-id", "demo", "--status", "passed"],
+            ):
+                subprocess.run(telemetry_cli + args, env=env, check=True, capture_output=True, text=True)
+            report = subprocess.run(
+                [sys.executable, str(SCRIPTS / "report.py"), "--task-id", "demo"],
+                env=env, check=True, capture_output=True, text=True).stdout
+
+            self.assertIn("**Task Telemetry**\n\nTokens | Local | Remote | Total\n"
+                          "--- | --- | --- | ---\n", report)
+            self.assertIn("Total | N/A | 55 | 55\n\n", report)
+            self.assertIn("Duration (ns) | Observed total\n--- | ---\nInvocation | 100", report)
+            self.assertIn("KPI | Value\n--- | ---\n", report)
+            self.assertIn("\n\n- Observed local invocations: 0", report)
+            self.assertIn("- Task status: passed.", report)
+            self.assertIn("- Final response usage: Not included.", report)
+
+    def test_vscode_chat_report_without_invocations(self):
+        with tempfile.TemporaryDirectory() as temp:
+            env = {**os.environ, "TOKEN_TELEMETRY_DIR": temp}
+            report = subprocess.run(
+                [sys.executable, str(SCRIPTS / "report.py"), "--task-id", "missing"],
+                env=env, check=True, capture_output=True, text=True).stdout
+            self.assertIn("Input | N/A | N/A | N/A", report)
+            self.assertIn("KPI | Value\n--- | ---\n", report)
+            self.assertNotIn("Duration (ns)", report)
+            self.assertIn("- Telemetry status: Missing.", report)
+
     def test_install_idempotency(self):
         with tempfile.TemporaryDirectory() as temp:
             command = [str(SCRIPTS / "install.sh"), "--source", str(ROOT),

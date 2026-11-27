@@ -11,6 +11,20 @@ telemetry.py finalize --task-id TASK --status passed
 report.py --task-id TASK
 ```
 
+Include the report text in the assistant's final response; a tool's output is
+not necessarily displayed in the chat. The report uses Markdown tables for VS
+Code chat. Report lifecycle or report-generation errors to the user.
+
+### VS Code chat acceptance case
+
+In GitHub Copilot Chat in VS Code, start a new chat with the skill installed and
+ask: "Use token-telemetry for this task and reply with OK." Check that the final
+assistant message contains both `OK` and the **Task Telemetry** report, with
+readable token and KPI tables, task status, and `N/A` for unavailable
+measurements. The report must appear in the final message, not only in a tool
+call. This is a manual host check; the automated tests cannot guarantee that a
+host loads the skill or displays an assistant response.
+
 For retries, pass `--parent-invocation INVOCATION_ID` and `--retry-count N`.
 
 ## Ollama reasoning and cached tokens
