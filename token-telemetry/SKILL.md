@@ -17,14 +17,23 @@ python3 "$skill_dir/scripts/telemetry.py" finalize --task-id TASK --status passe
 python3 "$skill_dir/scripts/report.py" --task-id TASK
 ```
 
-Before the final response, finalize the task with its actual status and run the
-report. Include the report's text in the final response itself, after the task
-result; tool output alone may not be visible in chat (including VS Code).
+Before the final response, when running in a Copilot session with
+`COPILOT_AGENT_SESSION_ID` set and usage has not already been captured through
+the SDK, import the current user message's recorded usage:
+
+```sh
+python3 "$skill_dir/scripts/copilot_adapter.py" --task-id TASK
+```
+
+Then finalize the task with its actual status and run the report. Include the
+report's text in the final response itself, after the task result; tool output
+alone may not be visible in chat (including VS Code).
 If finalization or report generation fails, report the error instead of
-claiming telemetry was shown.
+claiming telemetry was shown. Report import errors too; do not silently treat
+unavailable measurements as zero.
 
 For Ollama visible thinking-token counts, add `--count-reasoning`. Capture
-Copilot SDK `assistant.usage` events or record other measured usage with
+Copilot SDK `assistant.usage` events, import supported Copilot session usage, or record other measured usage with
 `telemetry.py record`; see [usage](docs/USAGE.md). Reports calculate missing totals or components when the
 other two counts are known and show the available measurements. Truly
 unavailable measurements remain `null`/`N/A`; zeros are reported only when

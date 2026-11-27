@@ -164,6 +164,81 @@ class ReasoningTokenTests(unittest.TestCase):
 
 
 class CopilotAdapterTests(unittest.TestCase):
+    @staticmethod
+    def session_usage(event_id, inputs, outputs, cached, provider=None):
+        return {
+            "type": "session.usage_record", "id": event_id,
+            "timestamp": "2026-11-27T23:12:25.933Z",
+            "data": {"usage": {
+                "model": "gpt-6.1-terra",
+                "provider": provider or {"id": "copilot", "kind": "copilot"},
+                "isByok": False, "inputTokens": inputs, "outputTokens": outputs,
+                "cacheReadTokens": cached, "cacheWriteTokens": 1,
+                "reasoningTokens": 2, "duration": 5,
+            }},
+        }
+
+    def test_import_scoped_session_usage_and_report_idempotently(self):
+        events = [
+            {"type": "user.message", "id": "first"},
+            self.session_usage("one", 100, 10, 90),
+            {"type": "user.message", "id": "second"},
+            self.session_usage("two", 200, 20, 180),
+            self.session_usage("three", 300, 30, 250),
+        ]
+        with tempfile.TemporaryDirectory() as temp, patch.dict(os.environ, {"TOKEN_TELEMETRY_DIR": temp}):
+            path = Path(temp) / "events.jsonl"
+            path.write_text("".join(json.dumps(event) + "\n" for event in events))
+            self.assertEqual(copilot_adapter.import_session_usage(path, "demo"), 2)
+            self.assertEqual(copilot_adapter.import_session_usage(path, "demo"), 0)
+            records = telemetry.read_jsonl(telemetry.telemetry_file())
+            self.assertEqual([r["invocation_id"] for r in records], ["two", "three"])
+            self.assertEqual(records[0]["duration_ns"], 5_000_000)
+            output = subprocess.run(
+                [sys.executable, str(SCRIPTS / "report.py"), "--task-id", "demo"],
+                check=True, capture_output=True, text=True).stdout
+            self.assertIn("Input | N/A | 500 | 500", output)
+            self.assertIn("Cached input | N/A | 430 | 430", output)
+            self.assertIn("Output | N/A | 50 | 50", output)
+            self.assertIn("Total | N/A | 550 | 550", output)
+            self.assertIn("Final response usage: Unknown", output)
+            self.assertEqual(copilot_adapter.import_session_usage(path, "first-task", "first"), 1)
+            with self.assertRaisesRegex(ValueError, "another task"):
+                copilot_adapter.import_session_usage(path, "other")
+
+    def test_import_rejects_unknown_provider_without_partial_writes(self):
+        events = [
+            {"type": "user.message", "id": "first"},
+            self.session_usage("one", 100, 10, 90),
+            self.session_usage("two", 100, 10, 90, {"kind": "unknown"}),
+        ]
+        with tempfile.TemporaryDirectory() as temp, patch.dict(os.environ, {"TOKEN_TELEMETRY_DIR": temp}):
+            path = Path(temp) / "events.jsonl"
+            path.write_text("".join(json.dumps(event) + "\n" for event in events))
+            with self.assertRaisesRegex(ValueError, "execution location"):
+                copilot_adapter.import_session_usage(path, "demo")
+            self.assertFalse(telemetry.telemetry_file().exists())
+            with self.assertRaisesRegex(ValueError, "user message not found"):
+                copilot_adapter.import_session_usage(path, "demo", "missing")
+
+    def test_import_cli_resolves_session_and_reports_missing_usage(self):
+        with tempfile.TemporaryDirectory() as temp:
+            session = Path(temp) / "session-state" / "session-id"
+            session.mkdir(parents=True)
+            (session / "events.jsonl").write_text(
+                json.dumps({"type": "user.message", "id": "message"}) + "\n" +
+                json.dumps(self.session_usage("one", 100, 10, 90)) + "\n")
+            env = dict(os.environ, TOKEN_TELEMETRY_DIR=temp, COPILOT_HOME=temp,
+                       COPILOT_AGENT_SESSION_ID="session-id")
+            command = [sys.executable, str(SCRIPTS / "copilot_adapter.py"), "--task-id", "demo"]
+            result = subprocess.run(command, env=env, capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("Imported 1", result.stdout)
+            (session / "events.jsonl").write_text(json.dumps({"type": "user.message", "id": "message"}) + "\n")
+            result = subprocess.run(command, env=env, capture_output=True, text=True)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("no usage records", result.stderr)
+
     def test_usage_event_records_sdk_counts_without_double_counting_cache(self):
         data = SimpleNamespace(model="m", input_tokens=100, output_tokens=30,
                                cache_read_tokens=20, cache_write_tokens=10,

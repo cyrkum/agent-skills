@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Import task-scoped Copilot session usage into telemetry reports.
+
 ## 0.1.0
 
 - Added normalized telemetry JSON Lines persistence.

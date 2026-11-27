@@ -51,7 +51,9 @@ def main():
         "telemetry_status": telemetry_status,
         "observed_invocations": len(invocations),
         "baseline_included": any(b.get("task_id") == args.task_id for b in baselines) if args.task_id else bool(baselines),
-        "final_response_usage_included": False,
+        "final_response_usage_included": None if any(
+            r.get("telemetry_source") == "copilot_session_usage" for r in invocations
+        ) else False,
     }
     if args.json:
         print(json.dumps(result, sort_keys=True))
@@ -94,7 +96,10 @@ def main():
     print(f"\n- Observed local invocations: {sum(r.get('execution_location') == 'local' for r in invocations)}")
     print(f"- Task status: {status}.")
     print(f"- Telemetry status: {telemetry_status}.")
-    print("- Final response usage: Not included.")
+    if result["final_response_usage_included"] is None:
+        print("- Final response usage: Unknown; reports generated before completion exclude it.")
+    else:
+        print("- Final response usage: Not included.")
 
 
 if __name__ == "__main__":

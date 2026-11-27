@@ -78,6 +78,33 @@ reasoning is a subset of output. This integration requires access to the
 owning application's live SDK session and cannot attach to another process or
 recover an event that was not captured.
 
+## Copilot session usage
+
+When `COPILOT_AGENT_SESSION_ID` identifies the current Copilot session, import
+the persisted `session.usage_record` events for the latest user message before
+finalizing and reporting:
+
+```sh
+python3 "$skill_dir/scripts/copilot_adapter.py" --task-id TASK
+```
+
+This reads `$COPILOT_HOME/session-state/$COPILOT_AGENT_SESSION_ID/events.jsonl`
+(`~/.copilot` is the default home). To recover a previous response, specify
+`--events /path/to/events.jsonl --user-message-id MESSAGE_ID`; without the
+message ID the last user message is selected. The import stops at the next user
+message and records only usage metadata, not conversation content. Re-imports
+of the same events for the same task do not duplicate them. Reusing an event
+for another task fails. Do not combine this import with live SDK recording for
+the same calls: the two mechanisms do not share invocation IDs.
+
+The importer accepts only events explicitly identified as non-BYOK Copilot
+usage; unknown or mixed provider locations fail rather than being guessed.
+It reports errors if the session log or usage is unavailable. Other hosts
+still need SDK or manual integration. A report generated before the final
+response excludes that response's usage, which is not yet available; importing
+again after completion can recover it. Local worker calls are separate and
+must be recorded by their own adapter to appear in local totals.
+
 ## Recording other measured usage
 
 When a provider or host exposes invocation usage, record the actual counts:

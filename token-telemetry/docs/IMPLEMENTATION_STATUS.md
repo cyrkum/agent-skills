@@ -7,7 +7,7 @@
 | Ollama native adapter | Implemented and live-validated with `qwen3.5:9b-q4_K_M` |
 | Persistence and report | Implemented and validated |
 | Instruction fallback | Implemented and documented |
-| Remote telemetry | Copilot SDK live usage-event adapter and manual measured recording; requires owning host integration |
+| Remote telemetry | Copilot session usage import, SDK live usage-event adapter and manual measured recording; availability depends on the host |
 | Lifecycle hooks | Unsupported: no supported host lifecycle hook found |
 | Installation/update/uninstallation | Implemented and isolated-testable |
 | Automated tests | Implemented |

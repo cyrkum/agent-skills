@@ -20,7 +20,7 @@ see [usage](docs/USAGE.md).
 
 - `scripts/telemetry.py`: task lifecycle, persistence, and baselines
 - `scripts/ollama_adapter.py`: native Ollama `/api/generate` telemetry
-- `scripts/copilot_adapter.py`: Copilot SDK `assistant.usage` event collection
+- `scripts/copilot_adapter.py`: Copilot SDK event collection and session usage import
 - `scripts/kpi.py`: RTR, TDR, TAF, RTS, TSR, and TCR
 - `scripts/report.py`: compact human-readable report
 - `schemas/telemetry.schema.json`: versioned normalized record
